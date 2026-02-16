@@ -1,1 +1,226 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks Extraction - Finance</title>
+    <style>
+        :root {
+            --bg-dark: #2c2a29;
+            --sidebar-width: 280px;
+            --table-row-hover: #f1f7ff;
+            --accent: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            margin: 0;
+            display: flex;
+        }
+
+        /* Sidebar - Styled like your reference image */
+        nav {
+            width: var(--sidebar-width);
+            height: 100vh;
+            padding: 20px;
+            background: #222;
+            position: fixed;
+            overflow-y: auto;
+            border-right: 1px solid #444;
+        }
+
+        nav h1 { font-size: 1.3rem; text-transform: uppercase; color: #fff; }
+        
+        .filter-group { margin-bottom: 25px; }
+        .filter-group h4 { font-size: 0.9rem; color: #bbb; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+        .filter-btn {
+            background: #444;
+            color: #ccc;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            border-radius: 3px;
+        }
+        .filter-btn.active { background: var(--accent); color: white; }
+
+        /* Main Table Area */
+        main {
+            margin-left: var(--sidebar-width);
+            padding: 40px;
+            width: 100%;
+            background-color: #f4f7f6;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: #2c3e50;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        tr:hover { background-color: var(--table-row-hover); }
+
+        .tag-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            background: #e1effe;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .link-btn {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>Tasks Extraction</h1>
+    <p style="font-size: 0.8rem; color: #888;">Interactive filtering of current research.</p>
+
+    <div class="filter-group">
+        <h4>Live Search</h4>
+        <input type="text" id="searchInput" placeholder="Search tasks..." onkeyup="filterData()">
+    </div>
+
+    <div class="filter-group">
+        <h4>Task Taxonomy</h4>
+        <div class="btn-group">
+            <button class="filter-btn active" onclick="setFilter('All', this)">All</button>
+            <button class="filter-btn" onclick="setFilter('Topology-based', this)">Topology-based</button>
+            <button class="filter-btn" onclick="setFilter('Attribute-based', this)">Attribute-based</button>
+            <button class="filter-btn" onclick="setFilter('Browsing', this)">Browsing</button>
+            <button class="filter-btn" onclick="setFilter('Overview', this)">Overview</button>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                   <!-- <th style="width: 20%;">Task Code</th>
+                    <th style="width: 25%;">User Task</th> -->
+                    <th>Study </th>
+                    <th>Task </th>
+                    <th>User Task</th>
+                    <th>Category</th>
+                    <th>Sub Category</th>
+                    <th>Detailed</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    let allData = [];
+    let methodFilter = 'All';
+
+    async function loadData() {
+        try {
+            // Fetch the local json file
+            const response = await fetch('datatask.json');
+            allData = await response.json();
+        
+            // Initial render
+            renderTable(allData);
+        } catch (error) {
+            console.error("Error loading JSON:", error);
+        }
+    }
+
+    function renderTable(data) {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = data.map(item => `
+            <tr>
+                <td><strong>${item.studycode}</strong></td>
+                <td><strong>${item.taskorder}</strong></td>
+                <td>${item.taskname}</td>
+                <td><span class="tag-pill">${item.high}</span></td>
+                <td>${item.low}</td>
+                <td>${item.detailed}</td>
+ 
+            </tr>
+        `).join('');
+    }
+
+    function setFilter(val, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        methodFilter = val;
+        filterData();
+    }
+
+    function filterData() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+    
+        const filtered = allData.filter(item => {
+        // In your JSON, the search fields should likely be 'taskname' or 'taskcode' 
+        // as 'title' and 'author' do not exist in datatask.json
+            const matchesSearch = (item.taskname && item.taskname.toLowerCase().includes(query)) || 
+                             (item.taskcode && item.taskcode.toLowerCase().includes(query));
+        
+        // In your JSON, the category for 'Topology-based' is stored in the 'high' property
+            const matchesMethod = (methodFilter === 'All' || item.high === methodFilter);
+        
+            return matchesSearch && matchesMethod;
+        });
+    
+        renderTable(filtered);
+    }
+
+    window.onload = loadData;
+</script>
+
+</body>
+</html>
